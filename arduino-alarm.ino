@@ -6,7 +6,7 @@
 #define BLUE_LED_PIN 4
 #define SPEAKER_PIN 2
 
-#define DELAY_DURATION_MS 200
+#define DELAY_DURATION_MS 180
 
 typedef enum {
   ALARM_STATE_OFF = LOW,
