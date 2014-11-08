@@ -15,6 +15,14 @@ typedef enum {
 
 static AlarmState current_state = ALARM_STATE_OFF;
 
+typedef enum {
+  PITCH_VALUE_NONE = 0,
+  PITCH_VALUE_LOW = 1000,
+  PITCH_VALUE_HIGH = 3000
+} PitchValue;
+
+static PitchValue current_pitch_value = PITCH_VALUE_NONE;
+
 static int switch_value = LOW;
 static int status_led_value = LOW;
 static int red_led_value = LOW;
@@ -58,10 +66,23 @@ void update_led_values() {
   }
 }
 
+void update_speaker_pitch_value() {
+  if (current_state == ALARM_STATE_OFF)
+    current_pitch_value = PITCH_VALUE_NONE;
+  else {
+    current_pitch_value = (current_pitch_value == PITCH_VALUE_HIGH)
+      ? PITCH_VALUE_LOW
+      : PITCH_VALUE_HIGH;
+  }
+}
+
 void render_result() {
     digitalWrite(STATUS_LED_PIN, status_led_value);
     digitalWrite(RED_LED_PIN, red_led_value);
     digitalWrite(BLUE_LED_PIN, blue_led_value);
+
+    if (current_pitch_value != PITCH_VALUE_NONE)
+      tone(SPEAKER_PIN, current_pitch_value, DELAY_DURATION_MS);
 }
 
 void loop() {
@@ -70,6 +91,7 @@ void loop() {
 
   toggle_state_if_needed();
   update_led_values();
+  update_speaker_pitch_value();
   render_result();
 
   delay(DELAY_DURATION_MS);
