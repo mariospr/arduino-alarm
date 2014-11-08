@@ -8,6 +8,16 @@
 
 #define DELAY_DURATION_MS 180
 
+#define LIGHT_SENSOR_TRESHOLD_HIGH 300
+#define LIGHT_SENSOR_TRESHOLD_LOW 200
+
+static int switch_value = LOW;
+static int status_led_value = LOW;
+static int red_led_value = LOW;
+static int blue_led_value = LOW;
+static int light_sensor_value = 0;
+static bool alarm_enabled = false;
+
 typedef enum {
   ALARM_STATE_OFF = LOW,
   ALARM_STATE_ON = HIGH
@@ -23,15 +33,9 @@ typedef enum {
 
 static PitchValue current_pitch_value = PITCH_VALUE_NONE;
 
-static int switch_value = LOW;
-static int status_led_value = LOW;
-static int red_led_value = LOW;
-static int blue_led_value = LOW;
-static int previous_switch_value = LOW;
-
 void setup() {
   pinMode(TOGGLE_SWITCH_PIN, INPUT);
-  /* pinMode(LIGHT_SENSOR_PIN, INPUT); */
+  pinMode(LIGHT_SENSOR_PIN, INPUT);
 
   pinMode(STATUS_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
@@ -39,22 +43,29 @@ void setup() {
   pinMode(SPEAKER_PIN, OUTPUT);
 }
 
-void toggle_state_if_needed() {
-  if (switch_value != HIGH || previous_switch_value == switch_value)
-    return;
+void read_input_values() {
+  int previous_switch_value = switch_value;
+  switch_value = digitalRead(TOGGLE_SWITCH_PIN);
 
-  current_state = (current_state == ALARM_STATE_OFF)
-    ? ALARM_STATE_ON
-    : ALARM_STATE_OFF;
+  if (switch_value == HIGH && previous_switch_value != switch_value) {
+    current_state = (current_state == ALARM_STATE_OFF)
+      ? ALARM_STATE_ON
+      : ALARM_STATE_OFF;
+  }
+
+  light_sensor_value = analogRead(LIGHT_SENSOR_PIN);
+  if (!alarm_enabled && light_sensor_value > LIGHT_SENSOR_TRESHOLD_HIGH)
+    alarm_enabled = true;
+  else if (alarm_enabled && light_sensor_value < LIGHT_SENSOR_TRESHOLD_LOW)
+    alarm_enabled = false;
 }
 
 void update_led_values() {
-  if (current_state == ALARM_STATE_OFF) {
-    status_led_value = HIGH;
+  status_led_value = current_state == ALARM_STATE_OFF ? HIGH : LOW;
+  if (current_state == ALARM_STATE_OFF || !alarm_enabled) {
     red_led_value = LOW;
     blue_led_value = LOW;
-  } else {
-    status_led_value = LOW;
+  } else if (alarm_enabled) {
     if (red_led_value == blue_led_value) {
       // First time we light these leds up after switching on.
       red_led_value = HIGH;
@@ -67,12 +78,12 @@ void update_led_values() {
 }
 
 void update_speaker_pitch_value() {
-  if (current_state == ALARM_STATE_OFF)
-    current_pitch_value = PITCH_VALUE_NONE;
-  else {
+  if (current_state == ALARM_STATE_ON && alarm_enabled) {
     current_pitch_value = (current_pitch_value == PITCH_VALUE_HIGH)
       ? PITCH_VALUE_LOW
       : PITCH_VALUE_HIGH;
+  } else {
+    current_pitch_value = PITCH_VALUE_NONE;
   }
 }
 
@@ -86,10 +97,7 @@ void render_result() {
 }
 
 void loop() {
-  previous_switch_value = switch_value;
-  switch_value = digitalRead(TOGGLE_SWITCH_PIN);
-
-  toggle_state_if_needed();
+  read_input_values();
   update_led_values();
   update_speaker_pitch_value();
   render_result();
