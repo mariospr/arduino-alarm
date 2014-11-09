@@ -88,12 +88,12 @@ void update_speaker_pitch_value() {
 }
 
 void render_result() {
-    digitalWrite(STATUS_LED_PIN, status_led_value);
-    digitalWrite(RED_LED_PIN, red_led_value);
-    digitalWrite(BLUE_LED_PIN, blue_led_value);
+  digitalWrite(STATUS_LED_PIN, status_led_value);
+  digitalWrite(RED_LED_PIN, red_led_value);
+  digitalWrite(BLUE_LED_PIN, blue_led_value);
 
-    if (current_pitch_value != PITCH_VALUE_NONE)
-      tone(SPEAKER_PIN, current_pitch_value, DELAY_DURATION_MS);
+  if (current_pitch_value != PITCH_VALUE_NONE)
+    tone(SPEAKER_PIN, current_pitch_value, DELAY_DURATION_MS);
 }
 
 void loop() {
